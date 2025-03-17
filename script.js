@@ -41,6 +41,46 @@ function fetchData(url) {
     })
 }
 
+function loadInitialBooks() {
+  fetch(`${apiurl}search.json?q=subject:Science+Fiction&limit=50&page=1`)
+    .then(response => response.json())
+    .then(data => {
+      data.docs.forEach(book => {
+        if (book.cover_i) {
+          let newDiv = document.createElement("div")
+          newDiv.classList.add("book")
+          containerDiv.appendChild(newDiv)
+          newDiv.innerHTML = `
+          <h4>${book.title}</h4>
+          <p>${book.author_name ? book.author_name[0] : "Unknown Author"}</p>
+          <img src="https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg" alt="${book.cover_i}">
+          <button>Add to List</button>
+          `
+          const btn = newDiv.querySelector("button")
+          btn.addEventListener("click", () => {
+            btn.textContent = " "
+            btn.classList.add("pressed")
+  
+            const list = JSON.parse(localStorage.getItem("list")) || []
+            const isOnList = list.some(item => item.key === book.key)
+            if (isOnList) {
+              alert("This book is already on your list!")
+            } else {
+              list.push(book)
+              localStorage.setItem("list", JSON.stringify(list))
+            }
+  
+            setTimeout(() => {
+              btn.textContent = "Add to List"
+              btn.classList.remove("pressed")
+            }, 300)
+          })
+        }
+      })
+    })
+    .catch(error => console.error(error))
+}
+
 let randomPage = Math.floor(Math.random() * 1000)
 const searchInput = document.querySelector("#search")
 const searchTypeSelect = document.querySelector("#search-type")
@@ -64,7 +104,7 @@ function updateBooks() {
   if (query) {
     debouncedFetchData(`${apiurl}search.json?${searchTypeSelect.value}=${query}&limit=50`)
   } else {
-    fetchData(apiurl+"search.json?q=subject:Science+Fiction&limit=50&page="+randomPage)
+    loadInitialBooks()
   }
 }
 
@@ -119,4 +159,4 @@ openBookListButton.addEventListener("click", () => {
   })
 })
 
-fetchData(apiurl+"search.json?q=subject:Science+Fiction&limit=50&page="+randomPage)
+loadInitialBooks()
